@@ -2,6 +2,7 @@
 
 Based on https://gotify.net/api-docs?urls.primaryName=v2.4.0.
 """
+
 from typing import Optional, TypedDict
 
 

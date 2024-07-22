@@ -1,4 +1,5 @@
 """Error classes for gotify."""
+
 import httpx
 
 from .response_types import Error

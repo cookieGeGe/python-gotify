@@ -20,7 +20,8 @@ def run_test_server():
             "x86_64": "amd64",
             "armv7l": "arm-7",
             "aarch64": "arm64",
-        }[platform.machine()]
+            "amd64": "amd64",
+        }[platform.machine().lower()]
     except KeyError as err:
         raise Exception(
             f"Your architecture '{platform.machine()}' seems to be unsupported"

@@ -21,7 +21,6 @@ from .response_types import (
 
 __all__ = ["AsyncGotify"]
 
-
 AsyncGotifyType = TypeVar("AsyncGotifyType", bound="AsyncGotify")
 
 
@@ -156,6 +155,7 @@ class AsyncGotify:
         extras: dict | None = None,
         priority: int | None = None,
         title: str | None = None,
+        app_token: str | None = None,
     ) -> Message:
         """Create a message."""
         return await self._request(
@@ -168,6 +168,7 @@ class AsyncGotify:
             },
             method="post",
             auth_mode="app",
+            app_token=app_token,
         )
 
     async def delete_messages(self, app_id: int | None = None) -> None:
@@ -331,6 +332,8 @@ class AsyncGotify:
         file: BinaryIO | None = None,
         method: str = "get",
         auth_mode: str = "client",
+        app_token: str | None = None,
+        client_token: str | None = None,
     ) -> Any:  # noqa: ANN401
         # if AsyncGotify isn't used as a context manager
         if self.http_client is None:
@@ -347,11 +350,14 @@ class AsyncGotify:
             # remove items that are None
             for key in [k for k, v in data.items() if v is None]:
                 del data[key]
-
+        token_dict = {
+            "app_token": app_token,
+            "client_token": client_token,
+        }
         r = await self.http_client.request(
             method,
             self._get_url(url_endpoint),
-            headers={"X-Gotify-Key": self._get_token(auth_mode)},
+            headers={"X-Gotify-Key": self._get_token(auth_mode, **token_dict)},
             params=data if method == "get" else None,
             json=data if method != "get" else None,
             files={"file": file} if file is not None else {},
@@ -373,19 +379,26 @@ class AsyncGotify:
             )
         return self.base_url.strip("/") + "/" + url_endpoint.strip("/")
 
-    def _get_token(self, auth_mode: str) -> str:
-        if auth_mode.lower() == "client":
-            if not self.client_token:
+    def _get_token(
+        self,
+        auth_mode: str,
+        app_token: str | None = None,
+        client_token: str | None = None,
+    ) -> str:
+        """Return the token for the given auth mode."""
+        lower_auth_mode = auth_mode.lower()
+        if lower_auth_mode == "client":
+            request_token = client_token or self.client_token
+            if not request_token:
                 raise GotifyConfigurationError(
-                    "'client_token' is not defined. You need to set it up"
-                    "before accessing client functions."
+                    "'client_token' is not defined. You need to set it up."
                 )
-            return self.client_token
-        elif auth_mode.lower() == "app":
-            if not self.app_token:
+            return request_token
+        elif lower_auth_mode == "app":
+            request_token = app_token or self.app_token
+            if not request_token:
                 raise GotifyConfigurationError(
-                    "'app_token' is not defined. You need to set it up before "
-                    "sending messages."
+                    "'app_token' is not defined. You need to set it up."
                 )
-            return self.app_token
+            return request_token
         raise GotifyConfigurationError(f"Unknown authentification mode '{auth_mode}'.")

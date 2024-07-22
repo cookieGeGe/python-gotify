@@ -306,6 +306,8 @@ class Gotify:
                     file=file,
                     method=method,
                     auth_mode=auth_mode,
+                    app_token=app_token,
+                    client_token=client_token,
                 )
 
         if data:
